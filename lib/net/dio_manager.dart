@@ -1,11 +1,13 @@
 import 'dart:io';
-
+import 'dart:convert';
 import 'package:cookie_jar/cookie_jar.dart';
 import 'package:dio/adapter.dart';
 import 'package:dio/dio.dart';
 import 'package:dio_cookie_manager/dio_cookie_manager.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:privacy_client/data/api/apis.dart';
+import 'package:privacy_client/common/cmmon.dart';
+import 'package:privacy_client/utils/index.dart';
 
 Dio _dio = Dio();
 
@@ -14,6 +16,8 @@ Dio get dio => _dio;
 
 /// dio 配置
 class DioManager {
+  bool isDebug = AppConfig.isDebug;
+
   static Future init() async {
     dio.options.baseUrl = Apis.BASE_HOST;
     dio.options.connectTimeout = 30 * 1000;
@@ -37,6 +41,61 @@ class DioManager {
     CookieJar cj =
         PersistCookieJar(storage: FileStorage(tempPath), ignoreExpires: true);
     dio.interceptors.add(CookieManager(cj));
+  }
+
+  //打印日志
+  InterceptorsWrapper logInterceptor() {
+    return InterceptorsWrapper(onRequest: (options, handler) {
+      if (isDebug) {
+        print('┌─────────────────────Begin Request─────────────────────');
+        printKV('uri', options.uri);
+        printKV('method', options.method);
+        printKV('queryParameters', options.queryParameters);
+        printKV('contentType', options.contentType.toString());
+        printKV('responseType', options.responseType.toString());
+        StringBuffer stringBuffer = new StringBuffer();
+        options.headers.forEach((key, v) => stringBuffer.write('\n  $key: $v'));
+        printKV('headers', stringBuffer.toString());
+        stringBuffer.clear();
+
+        if (options.data != null) {
+          printKV('body', options.data);
+        }
+        print('└—————————————————————End Request———————————————————————\n\n');
+      }
+      handler.next(options);
+    }, onResponse: (response, handler) {
+      if (isDebug) {
+        print('┌─────────────────────Begin Response—————————————————————');
+        printKV('uri', response.requestOptions.uri);
+        printKV('status', response.statusCode.toString());
+        printKV(
+            'responseType', response.requestOptions.responseType.toString());
+
+        StringBuffer stringBuffer = new StringBuffer();
+        response.headers
+            .forEach((key, v) => stringBuffer.write('\n  $key: $v'));
+        printKV('headers', stringBuffer.toString());
+        stringBuffer.clear();
+
+        // printLong('response: ' + response.toString());
+
+        print('└—————————————————————End Response———————————————————————\n\n');
+      }
+      handler.next(response);
+    }, onError: (DioError e, handler) {
+      if (isDebug) {
+        print('┌─────────────────────Begin Dio Error—————————————————————');
+        printKV('error', e.toString());
+        printKV('error message', (e.response?.toString() ?? ''));
+        print('└—————————————————————End Dio Error———————————————————————\n\n');
+      }
+      handler.next(e);
+    });
+  }
+
+  printKV(String key, Object value) {
+    printLong('$key: $value');
   }
 
   static String handleError(error, {String defaultErrorStr = '未知错误~'}) {
