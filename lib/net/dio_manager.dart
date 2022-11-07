@@ -6,7 +6,7 @@ import 'package:dio/dio.dart';
 import 'package:dio_cookie_manager/dio_cookie_manager.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:privacy_client/data/api/apis.dart';
-import 'package:privacy_client/common/cmmon.dart';
+import 'package:privacy_client/common/common.dart';
 import 'package:privacy_client/utils/index.dart';
 
 Dio _dio = Dio();
