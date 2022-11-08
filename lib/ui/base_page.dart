@@ -44,7 +44,12 @@ abstract class BasePageState<T extends BasePage> extends State<T>
     return Scaffold(
       body: Container(
         child: Stack(
-          children: <Widget>[],
+          children: <Widget>[
+            _attachBaseContentWidget(context),
+            _attachBaseErrorWidget(),
+            _attachBaseLoadingWidget(),
+            _attachBaseEmptyWidget()
+          ],
         ),
       ),
     );
